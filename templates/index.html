@@ -1,0 +1,63 @@
+#LoL 부분에 "서버 비교" UI를 별도로 만들어 차별점을 줍니다.
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Patch Monitor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .lol-box { background-color: #f8f9fa; border: 2px solid #d1d1d1; border-radius: 10px; padding: 20px; }
+        .status-badge { font-size: 1.2em; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-5">🕹️ 주요 게임 패치노트 모니터</h1>
+
+        <div class="lol-box mb-5">
+            <h2 class="text-primary">🏆 League of Legends (Global Compare)</h2>
+            <p class="text-muted">북미(NA) 서버와 한국(KR) 서버의 패치 속도를 비교 분석합니다.</p>
+            <hr>
+            <div class="row text-center align-items-center">
+                <div class="col-md-4">
+                    <h5>🇺🇸 NA Server</h5>
+                    <p><a href="{{ lol.na_link }}" target="_blank">{{ lol.na_title }}</a></p>
+                </div>
+                <div class="col-md-4">
+                    <span class="status-badge text-warning">{{ lol.status }}</span>
+                    <p class="small mt-2">{{ lol.desc }}</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>🇰🇷 KR Server</h5>
+                    <p><a href="{{ lol.kr_link }}" target="_blank">{{ lol.kr_title }}</a></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card border-danger mb-3">
+                    <div class="card-header bg-danger text-white">Valorant</div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ val.title }}</h5>
+                        <a href="{{ val.link }}" class="btn btn-outline-danger btn-sm" target="_blank">패치노트 확인</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card border-info mb-3">
+                    <div class="card-header bg-info text-white">Eternal Return</div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ er.title }}</h5>
+                        <p class="card-text">스팀 뉴스 허브 기준 최신 소식입니다.</p>
+                        <a href="{{ er.link }}" class="btn btn-outline-info btn-sm" target="_blank">스팀 공지 가기</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -19,12 +19,6 @@
                 <a href="#{{ nav.target }}" class="tab-link {% if loop.first %}active{% endif %}">{{ nav.label }}</a>
             {% endfor %}
         </div>
-        {% if lol_status %}
-            <div class="status-banner mt-4 d-inline-flex align-items-center gap-2">
-                <strong>LoL 상태</strong>
-                <span>{{ lol_status.status }} · {{ lol_status.desc }}</span>
-            </div>
-        {% endif %}
     </section>
 
     <section id="lol" class="category-card accent-lol card border-0 shadow-sm">

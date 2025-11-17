@@ -1,0 +1,37 @@
+# ---- Python 가상환경 ----
+venv/
+.venv/
+
+# ---- 환경 변수 파일 (.env) ----
+.env
+
+# ---- Python 캐시 파일 ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ---- Flask/Temp ----
+instance/
+*.db
+*.sqlite3
+
+# ---- 로그 파일 ----
+*.log
+database.json
+
+# ---- VSCode 설정 ----
+.vscode/
+
+# ---- 운영체제 임시 파일 ----
+.DS_Store
+Thumbs.db
+
+# ---- 파이썬 모듈 빌드/배포 ----
+build/
+dist/
+*.egg-info/
+
+# ---- 기타 ----
+*.swp
+*.bak

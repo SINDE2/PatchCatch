@@ -7,9 +7,9 @@ from email.utils import formataddr
 def send_email(game_name, title, link):
     """새로운 패치 발견 시 이메일 발송"""
     # ---------------- 설정 구역 ----------------
-    sender_email = "tjwjddn4709@naver.com"    #example 대신 본인의 계정이메일작성
-    app_password = "H5TJ1HE6F7JV"             # 2단계 인증 -> 앱 비밀번호 생성
-    receiver_email = "tjwjddn4709@korea.ac.kr" #returnaddress 받을이메일 작성
+    SENDER_EMAIL= "their_email@gmail.com"
+    APP_PASSWORD="their_app_password"
+    RECEIVER_EMAIL="their_receiver@gmail.com" #returnaddress 받을이메일 작성
     # -------------------------------------------
     subject = f"[패치캐치!! 알림!!] {game_name} 새 업데이트 발견!"
     content = f"""

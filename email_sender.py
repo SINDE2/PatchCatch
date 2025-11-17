@@ -1,12 +1,15 @@
-#주의: 구글 앱 비밀번호를 발급받아 password 부분에 넣어야 합니다.
 import smtplib
 from email.mime.text import MIMEText
+from email.header import Header
+from email.utils import formataddr
+
+
 def send_email(game_name, title, link):
     """새로운 패치 발견 시 이메일 발송"""
     # ---------------- 설정 구역 ----------------
-    sender_email = "example@gmail.com"    #example 대신 본인의 계정이메일작성
-    app_password = "password"             # 2단계 인증 -> 앱 비밀번호 생성
-    receiver_email = "returnaddress@gmail.com"      #returnaddress 받을이메일 작성
+    sender_email = "tjwjddn4709@naver.com"    #example 대신 본인의 계정이메일작성
+    app_password = "H5TJ1HE6F7JV"             # 2단계 인증 -> 앱 비밀번호 생성
+    receiver_email = "tjwjddn4709@korea.ac.kr" #returnaddress 받을이메일 작성
     # -------------------------------------------
     subject = f"[패치캐치!! 알림!!] {game_name} 새 업데이트 발견!"
     content = f"""
@@ -15,13 +18,15 @@ def send_email(game_name, title, link):
     제목: {title}
     바로가기: {link}
     """
-    msg = MIMEText(content)
-    msg['Subject'] = subject
-    msg['From'] = sender_email
+    msg = MIMEText(content, 'plain', 'utf-8')
+    msg['Subject'] = Header(subject, 'utf-8')
+    msg['From'] = formataddr(('PatchCatch', sender_email))
     msg['To'] = receiver_email
     try:
-        # 지메일 SMTP 포트 465 (SSL)
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        with smtplib.SMTP('smtp.naver.com', 587) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
             server.login(sender_email, app_password)
             server.send_message(msg)
         print(f"📧 이메일 발송 성공: {game_name}")

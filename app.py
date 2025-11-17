@@ -162,22 +162,50 @@ def collect_payloads():
     return payloads, lol_status
 
 
+def extract_manual_payloads(saved):
+    manual_entries = saved.pop('manual_payloads', [])
+    manual_payloads = {}
+    if not isinstance(manual_entries, list):
+        return manual_payloads
+    for entry in manual_entries:
+        if not isinstance(entry, dict):
+            continue
+        slug = entry.get('slug')
+        title = entry.get('title')
+        if not slug or not title:
+            continue
+        link = entry.get('link')
+        manual_payloads[slug] = {
+            'game': entry.get('game', slug),
+            'title': translate_text(title),
+            'link': link,
+            'version': entry.get('version') or parse_version(title, link),
+            'manual': True
+        }
+    return manual_payloads
+
+
 @app.route('/')
 def index():
     saved = load_db()
     payloads, lol_status = collect_payloads()
+    manual_payloads = extract_manual_payloads(saved)
+    if manual_payloads:
+        payloads.update(manual_payloads)
 
     for slug, payload in payloads.items():
         title = payload.get('title')
         if not title:
             continue
         record = ensure_channel_record(saved, slug)
+        is_manual = payload.get('manual')
         is_new = record.get('last_title') != title
-        payload['is_new'] = is_new
-        if is_new:
+        should_process = is_manual or is_new
+        payload['is_new'] = should_process
+        if should_process:
             add_history_entry(saved, slug, title, payload.get('link'))
-            link = payload.get('link')
-            if link:
+            link = payload.get('link') or '#'
+            if link != '#' or is_manual:
                 send_email(payload.get('game', slug), title, link)
 
     save_db(saved)

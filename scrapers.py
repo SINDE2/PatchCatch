@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from urllib.parse import urljoin
 import requests
@@ -100,7 +101,24 @@ def _valorant_nodes_from_next_data():
         .get("nodes", [])
     )
 
+_DUMMY_VALORANT_PAYLOAD = {
+    "kr": {
+        "game": "Valorant",
+        "title": "테스트 패치 99.99 패치 노트 (Dummy)",
+        "link": "https://playvalorant.com/ko-kr/news/game-updates/dummy-99-99-patch-notes"
+    }
+}
+
+
+def _use_dummy_valorant_news() -> bool:
+    flag = os.environ.get("VALORANT_DUMMY_PATCH", "")
+    return flag.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def get_valorant_news():
+    if _use_dummy_valorant_news():
+        return {key: value.copy() for key, value in _DUMMY_VALORANT_PAYLOAD.items()}
+
     nodes = []
     try:
         nodes = _valorant_nodes_from_page_data()

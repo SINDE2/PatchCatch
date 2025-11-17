@@ -8,6 +8,44 @@
 </head>
 <body>
 <div class="page-wrapper container py-5">
+    <section class="dashboard-card mb-4">
+        <div class="dashboard-head d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div>
+                <p class="dash-eyebrow mb-1">PatchCatch 대시보드</p>
+                <h2 class="dash-title mb-0">실시간 패치 동향</h2>
+            </div>
+            <a href="{{ url_for('index') }}" class="refresh-btn">자동 새로고침</a>
+        </div>
+        <div class="dashboard-body">
+            {% for card in dashboard_cards %}
+                <article class="dash-row {% if loop.first %}border-top-0{% endif %}">
+                    <div class="d-flex flex-column flex-md-row align-items-md-center gap-3 flex-grow-1">
+                        <div class="dash-game flex-grow-1">
+                            <p class="mb-1 fw-bold">{{ card.name }}</p>
+                            {% if card.desc %}
+                                <small class="text-muted">{{ card.desc }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="dash-badges d-flex align-items-center gap-2">
+                            {% if card.is_new %}
+                                <span class="dash-new">NEW</span>
+                            {% endif %}
+                            <span class="dash-status {{ 'sync' if card.status and '완료' in card.status else 'alert' }}">{{ card.status }}</span>
+                        </div>
+                        <div class="dash-versions">
+                            {% if card.has_na %}
+                                <span>NA: <strong>{{ card.na_version or '-' }}</strong></span>
+                                <span>KR: <strong>{{ card.kr_version or '-' }}</strong></span>
+                            {% else %}
+                                <span>KR: <strong>{{ card.kr_version or '-' }}</strong></span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+
     <section class="hero-card text-center mb-5">
         <span class="label-pill text-uppercase">Zero Day Digest</span>
         <h1 class="hero-title mt-3 mb-3">게임별 패치 내역을 한 번에</h1>

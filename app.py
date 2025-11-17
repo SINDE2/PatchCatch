@@ -18,6 +18,9 @@ DB_FILE = 'database.json'
 HISTORY_LIMIT = 12
 translator = Translator()
 KOREAN_PATTERN = re.compile(r'[\u3131-\u318E\uAC00-\uD7A3]')
+PATCH_LINK_PATTERN = re.compile(r'patch-(\d+)-(\d+)', re.IGNORECASE)
+DECIMAL_PATTERN = re.compile(r'\d+\.\d+')
+NUMBER_PATTERN = re.compile(r'\d+')
 
 GAME_SECTIONS = [
     {
@@ -46,7 +49,7 @@ GAME_SECTIONS = [
                 "key": "eternal_return_kr",
                 "label": "한국 서버",
                 "chip": "KR",
-                "desc": "글로벌 공지를 한국어로 번역해 제공합니다."
+                "desc": "한국어 공식 패치 노트를 정리합니다."
             }
         ]
     }
@@ -89,6 +92,22 @@ def translate_text(text):
         return text
 
 
+def parse_version(text, link=None):
+    if link:
+        match = PATCH_LINK_PATTERN.search(link)
+        if match:
+            return f"{match.group(1)}.{match.group(2)}"
+    if text:
+        decimals = DECIMAL_PATTERN.findall(text)
+        for dec in decimals:
+            if dec:
+                return dec
+        numbers = NUMBER_PATTERN.findall(text)
+        if numbers:
+            return numbers[0]
+    return None
+
+
 def ensure_channel_record(storage, key):
     record = storage.get(key)
     if not isinstance(record, dict):
@@ -129,38 +148,40 @@ def collect_payloads():
     payloads = {}
     lol_status = None
 
+    def build_payload(game_name, raw_title, link):
+        if not raw_title:
+            return None
+        return {
+            'game': game_name,
+            'title': translate_text(raw_title),
+            'link': link,
+            'version': parse_version(raw_title, link)
+        }
+
     lol = get_lol_comparison()
     if lol:
         lol_status = {
             'status': translate_text(lol.get('status')),
             'desc': translate_text(lol.get('desc'))
         }
-        payloads['lol_na'] = {
-            'game': 'League of Legends (NA)',
-            'title': translate_text(lol.get('na_title')),
-            'link': lol.get('na_link')
-        }
-        payloads['lol_kr'] = {
-            'game': 'League of Legends (KR)',
-            'title': translate_text(lol.get('kr_title')),
-            'link': lol.get('kr_link')
-        }
+        na_payload = build_payload('League of Legends (NA)', lol.get('na_title'), lol.get('na_link'))
+        kr_payload = build_payload('League of Legends (KR)', lol.get('kr_title'), lol.get('kr_link'))
+        if na_payload:
+            payloads['lol_na'] = na_payload
+        if kr_payload:
+            payloads['lol_kr'] = kr_payload
 
     valorant = get_valorant_news()
     for region, info in valorant.items():
-        payloads[f'valorant_{region}'] = {
-            'game': 'Valorant',
-            'title': translate_text(info.get('title')),
-            'link': info.get('link')
-        }
+        entry = build_payload('Valorant', info.get('title'), info.get('link'))
+        if entry:
+            payloads[f'valorant_{region}'] = entry
 
     eternal = get_eternal_return_news()
     for region, info in eternal.items():
-        payloads[f'eternal_return_{region}'] = {
-            'game': 'Eternal Return',
-            'title': translate_text(info.get('title')),
-            'link': info.get('link')
-        }
+        entry = build_payload('Eternal Return', info.get('title'), info.get('link'))
+        if entry:
+            payloads[f'eternal_return_{region}'] = entry
 
     return payloads, lol_status
 
@@ -176,6 +197,7 @@ def index():
             continue
         record = ensure_channel_record(saved, slug)
         is_new = record.get('last_title') != title
+        payload['is_new'] = is_new
         if is_new:
             add_history_entry(saved, slug, title, payload.get('link'))
             link = payload.get('link')
@@ -206,12 +228,53 @@ def index():
             'servers': servers
         })
 
+    def get_latest_entry(slug):
+        if slug in payloads and payloads[slug].get('title'):
+            return payloads[slug]
+        history = saved.get(slug, {}).get('history') or []
+        return history[0] if history else {}
+
+    dashboard_cards = []
+    lol_na_entry = get_latest_entry('lol_na')
+    lol_kr_entry = get_latest_entry('lol_kr')
+    dashboard_cards.append({
+        'slug': 'lol',
+        'name': '리그 오브 레전드',
+        'na_version': payloads.get('lol_na', {}).get('version') or parse_version(
+            lol_na_entry.get('title'), lol_na_entry.get('link')
+        ),
+        'kr_version': payloads.get('lol_kr', {}).get('version') or parse_version(
+            lol_kr_entry.get('title'), lol_kr_entry.get('link')
+        ),
+        'status': (lol_status or {}).get('status') or '상태 미확인',
+        'desc': (lol_status or {}).get('desc'),
+        'is_new': payloads.get('lol_na', {}).get('is_new', False) or payloads.get('lol_kr', {}).get('is_new', False),
+        'has_na': True
+    })
+
+    for section in GAME_SECTIONS:
+        server_key = section['servers'][0]['key']
+        entry = get_latest_entry(server_key)
+        dashboard_cards.append({
+            'slug': section['slug'],
+            'name': section['name'],
+            'na_version': None,
+            'kr_version': payloads.get(server_key, {}).get('version') or parse_version(
+                entry.get('title'), entry.get('link')
+            ),
+            'status': '동기화 완료' if entry else '대기중',
+            'desc': None,
+            'is_new': payloads.get(server_key, {}).get('is_new', False),
+            'has_na': False
+        })
+
     return render_template(
         'index.html',
         lol_status=lol_status,
         lol_panels=lol_panels,
         other_games=other_games,
-        nav_links=NAV_LINKS
+        nav_links=NAV_LINKS,
+        dashboard_cards=dashboard_cards
     )
 
 

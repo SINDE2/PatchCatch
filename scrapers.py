@@ -1,4 +1,3 @@
-#롤전용
 #이 코드는 순수 LoL 패치노트가 나올 때까지 게시물을 탐색합니다.
 #핵심 해결책: "제목"과 "URL" 이중 검증
 #반복문(Loop) 필수: 리스트의 첫 번째 글(select_one)만 가져오면 안 됩니다. 위에서부터 하나씩 훑으면서 조건에 맞는 게 나올 때까지 찾아야 합니다.
@@ -62,7 +61,7 @@ def get_lol_comparison():
     return data
 
 def get_valorant_news():
-    """발로란트: 한국 공홈"""
+    """발로란트: 한국 공식홈페이지"""
     try:
         url = "https://playvalorant.com/ko-kr/news/game-updates/"
         soup = BeautifulSoup(requests.get(url, headers=HEADERS).text, 'html.parser')

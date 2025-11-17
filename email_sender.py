@@ -1,10 +1,6 @@
-
 #주의: 구글 앱 비밀번호를 발급받아 password 부분에 넣어야 합니다.
-
-
 import smtplib
 from email.mime.text import MIMEText
-
 def send_email(game_name, title, link):
     """새로운 패치 발견 시 이메일 발송"""
     # ---------------- 설정 구역 ----------------
@@ -16,18 +12,14 @@ def send_email(game_name, title, link):
     subject = f"[패치캐치!! 알림!!] {game_name} 새 업데이트 발견!"
     content = f"""
     [새로운 패치노트가 감지되었습니다]
-    
     게임: {game_name}
     제목: {title}
-    
     바로가기: {link}
     """
-    
     msg = MIMEText(content)
     msg['Subject'] = subject
     msg['From'] = sender_email
     msg['To'] = receiver_email
-
     try:
         # 지메일 SMTP 포트 465 (SSL)
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:

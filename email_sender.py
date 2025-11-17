@@ -20,14 +20,14 @@ def send_email(game_name, title, link):
     """
     msg = MIMEText(content, 'plain', 'utf-8')
     msg['Subject'] = Header(subject, 'utf-8')
-    msg['From'] = formataddr(('PatchCatch', sender_email))
-    msg['To'] = receiver_email
+    msg['From'] = formataddr(('PatchCatch', SENDER_EMAIL))
+    msg['To'] = RECEIVER_EMAIL
     try:
         with smtplib.SMTP('smtp.naver.com', 587) as server:
             server.ehlo()
             server.starttls()
             server.ehlo()
-            server.login(sender_email, app_password)
+            server.login(SENDER_EMAIL, APP_PASSWORD)
             server.send_message(msg)
         print(f"📧 이메일 발송 성공: {game_name}")
     except Exception as e:

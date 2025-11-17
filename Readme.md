@@ -4,7 +4,8 @@ Rookies29기 python 수업 프로젝트 5조
 라이브러리 설치: 터미널에 입력
 
 Bash (윈도우키+r) cmd 입력 혹은 shift 마우스오른쪽버튼에서 powershell
-pip install flask requests beautifulsoup4 googletrans==4.0.0-rc1
+
+터미널 에서 pip install flask requests beautifulsoup4 googletrans==4.0.0-rc1 입력하시오.
 
 이메일 설정: email_sender.py 열어서 본인 이메일과 앱 비밀번호 입력. (테스트 때는 app.py의 send_email 부분 주석 처리 해제)
 

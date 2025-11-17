@@ -7,89 +7,88 @@
 
 import requests
 from bs4 import BeautifulSoup
+from googletrans import Translator
+import re
+
+# 차단 방지 헤더
+HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
 
 def get_lol_comparison():
+    """리그 오브 레전드: 북미 vs 한국 버전 비교 및 필터링"""
     data = {
         "game": "League of Legends",
-        "na_title": "탐색 실패", "na_link": "",
-        "kr_title": "탐색 실패", "kr_link": "",
-        "status": "분석 중...",
-        "desc": ""
+        "na_title": "로딩 중...", "na_link": "#",
+        "kr_title": "로딩 중...", "kr_link": "#",
+        "status": "확인 불가", "desc": "데이터를 가져오지 못했습니다."
     }
     
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-
-    # -------------------------------------------------------
-    # 1. [북미] NA Server 로직
-    # -------------------------------------------------------
+    # 1. 북미(NA) - Patch & Notes 키워드 필터링
     try:
-        url_na = "https://www.leagueoflegends.com/en-us/news/game-updates/"
-        soup_na = BeautifulSoup(requests.get(url_na, headers=headers).text, 'html.parser')
-        
-        # 모든 링크를 가져와서 검증 (첫 번째만 보면 안 됨)
-        articles_na = soup_na.select('a[href^="/en-us/news/game-updates/"]')
-        
-        for art in articles_na:
-            title = art.get_text(strip=True)
-            href = art['href']
-            
-            # [필터링] 'Patch'와 'Notes'가 있고, 'TFT'는 없어야 함
-            if "Patch" in title and "Notes" in title and "TFT" not in title:
-                data['na_title'] = title
-                data['na_link'] = "https://www.leagueoflegends.com" + href
-                break # 찾았으면 반복문 종료
-                
-    except Exception as e:
-        print(f"NA Parsing Error: {e}")
+        soup = BeautifulSoup(requests.get("https://www.leagueoflegends.com/en-us/news/game-updates/", headers=HEADERS).text, 'html.parser')
+        articles = soup.select('a[href^="/en-us/news/game-updates/"]')
+        for art in articles:
+            t = art.get_text(strip=True)
+            if "Patch" in t and "Notes" in t and "TFT" not in t:
+                data['na_title'] = t
+                data['na_link'] = "https://www.leagueoflegends.com" + art['href']
+                break
+    except: pass
 
-    # -------------------------------------------------------
-    # 2. [한국] KR Server 로직 (여기가 중요!)
-    # -------------------------------------------------------
+    # 2. 한국(KR) - 패치 & 노트 키워드 필터링 (TFT 제외)
     try:
-        url_kr = "https://www.leagueoflegends.com/ko-kr/news/game-updates/"
-        soup_kr = BeautifulSoup(requests.get(url_kr, headers=headers).text, 'html.parser')
-        
-        # 한국 사이트의 모든 업데이트 링크 수집
-        articles_kr = soup_kr.select('a[href^="/ko-kr/news/game-updates/"]')
-        
-        for art in articles_kr:
-            title = art.get_text(strip=True)
-            href = art['href']
-            
-            # [강력한 필터링] 
-            # 1. 제목에 '패치'가 있어야 함
-            # 2. 제목에 '노트'가 있어야 함
-            # 3. 'TFT', '전략적', '개발자'가 포함되면 안 됨 (롤체 거르기)
-            if "패치" in title and "노트" in title:
-                if "TFT" not in title and "전략적" not in title and "개발자" not in title:
-                    data['kr_title'] = title
-                    data['kr_link'] = "https://www.leagueoflegends.com" + href
-                    break # 진짜 롤 패치노트를 찾으면 종료
-                    
-    except Exception as e:
-        print(f"KR Parsing Error: {e}")
+        soup = BeautifulSoup(requests.get("https://www.leagueoflegends.com/ko-kr/news/game-updates/", headers=HEADERS).text, 'html.parser')
+        articles = soup.select('a[href^="/ko-kr/news/game-updates/"]')
+        for art in articles:
+            t = art.get_text(strip=True)
+            # '패치'와 '노트'가 있고, 'TFT/전략적/개발자'가 없는 것
+            if "패치" in t and "노트" in t and not any(x in t for x in ["TFT", "전략적", "개발자"]):
+                data['kr_title'] = t
+                data['kr_link'] = "https://www.leagueoflegends.com" + art['href']
+                break
+    except: pass
 
-    # -------------------------------------------------------
-    # 3. 비교 로직 (버전 숫자 추출 비교)
-    # -------------------------------------------------------
-    # 예: "Patch 14.23 Notes" vs "14.23 패치 노트" -> "14.23"만 뽑아서 비교
-    import re
-    
-    # 숫자.숫자 패턴 추출 (예: 14.23)
+    # 3. 버전 비교
     na_ver = re.search(r'(\d+\.\d+)', data['na_title'])
     kr_ver = re.search(r'(\d+\.\d+)', data['kr_title'])
     
     if na_ver and kr_ver:
         if na_ver.group(1) == kr_ver.group(1):
             data['status'] = "✅ 동기화 완료"
-            data['desc'] = f"한국 서버도 {kr_ver.group(1)} 버전입니다."
+            data['desc'] = f"한국 서버에 {kr_ver.group(1)} 패치가 적용되었습니다."
         else:
-            # 버전이 다르면 보통 숫자가 더 높은 쪽이 최신 (보통 NA가 빠름)
-            data['status'] = "⚠️ 버전 불일치"
-            data['desc'] = f"북미({na_ver.group(1)}) / 한국({kr_ver.group(1)}) - 차이가 있습니다."
-    else:
-        # 정규식으로 버전을 못 찾았을 경우 안전장치
-        data['status'] = "❓ 버전 확인 불가"
-        data['desc'] = "제목 형식이 변경되어 자동 비교가 어렵습니다."
-
+            data['status'] = "🚀 북미 선행 공개"
+            data['desc'] = f"북미({na_ver.group(1)})가 한국({kr_ver.group(1)})보다 최신입니다."
+    
     return data
+
+def get_valorant_news():
+    """발로란트: 한국 공홈"""
+    try:
+        url = "https://playvalorant.com/ko-kr/news/game-updates/"
+        soup = BeautifulSoup(requests.get(url, headers=HEADERS).text, 'html.parser')
+        card = soup.select_one('a[href*="/news/game-updates/valorant-patch-notes"]')
+        if card:
+            title = card.find(['h3', 'h5']).get_text(strip=True)
+            return {"game": "Valorant", "title": title, "link": "https://playvalorant.com" + card['href']}
+    except: pass
+    return None
+
+def get_eternal_return_news():
+    """이터널 리턴: 스팀 뉴스 (안정성)"""
+    try:
+        url = "https://store.steampowered.com/news/app/1049590"
+        soup = BeautifulSoup(requests.get(url, headers=HEADERS).text, 'html.parser')
+        # 스팀 뉴스 구조 (변동 가능성 있으나 비교적 안정적)
+        link_item = soup.select_one('#NewsMainItems a') 
+        if link_item:
+            # 번역기능 시연 (제목이 영어일 경우 번역)
+            original_title = link_item.get_text(strip=True)
+            translator = Translator()
+            try:
+                translated = translator.translate(original_title, dest='ko').text
+            except:
+                translated = original_title
+                
+            return {"game": "Eternal Return", "title": translated, "link": link_item['href']}
+    except: pass
+    return None

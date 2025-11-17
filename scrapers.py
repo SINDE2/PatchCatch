@@ -1,11 +1,9 @@
 import json
 import re
 from urllib.parse import urljoin
-
 import json
 import re
 from urllib.parse import urljoin
-
 import requests
 from bs4 import BeautifulSoup
 from googletrans import Translator

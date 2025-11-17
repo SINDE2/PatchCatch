@@ -1,3 +1,8 @@
+import json
+import re
+from urllib.parse import urljoin
+
+import json
 import re
 from urllib.parse import urljoin
 
@@ -64,23 +69,62 @@ def get_lol_comparison():
     return data
 
 
+def _valorant_nodes_from_page_data():
+    data_url = "https://playvalorant.com/page-data/ko-kr/news/game-updates/page-data.json"
+    payload = requests.get(data_url, headers=HEADERS).json()
+    return (
+        payload.get("result", {})
+        .get("data", {})
+        .get("allContentstackNewsArticle", {})
+        .get("nodes", [])
+    )
+
+
+def _valorant_nodes_from_next_data():
+    html = requests.get("https://playvalorant.com/ko-kr/news/game-updates/", headers=HEADERS).text
+    soup = BeautifulSoup(html, 'html.parser')
+    script = soup.find('script', id="__NEXT_DATA__")
+    if not script or not script.string:
+        return []
+    data = json.loads(script.string)
+    return (
+        data.get("props", {})
+        .get("pageProps", {})
+        .get("pageData", {})
+        .get("data", {})
+        .get("allContentstackNewsArticle", {})
+        .get("nodes", [])
+    )
+
+
 def get_valorant_news():
+    nodes = []
     try:
-        base = "https://playvalorant.com/ko-kr/news/game-updates/"
-        soup = BeautifulSoup(requests.get(base, headers=HEADERS).text, 'html.parser')
-        card = soup.select_one('a[href*="/news/game-updates/valorant-patch-notes"]')
-        if not card:
-            return {}
-        title = card.find(['h3', 'h5']).get_text(strip=True)
-        return {
-            "kr": {
-                "game": "발로란트",
-                "title": title,
-                "link": "https://playvalorant.com" + card['href']
-            }
-        }
+        nodes = _valorant_nodes_from_page_data()
     except Exception:
-        return {}
+        nodes = []
+    if not nodes:
+        try:
+            nodes = _valorant_nodes_from_next_data()
+        except Exception:
+            nodes = []
+
+    for node in nodes:
+        url_field = node.get("url")
+        url_path = None
+        if isinstance(url_field, dict):
+            url_path = url_field.get("url")
+        elif isinstance(url_field, str):
+            url_path = url_field
+        if not url_path or "patch-notes" not in url_path:
+            continue
+        title = node.get("title")
+        link = "https://playvalorant.com" + url_path
+        if title and link:
+            return {
+                "kr": {"game": "발로란트", "title": title, "link": link}
+            }
+    return {}
 
 
 def get_eternal_return_news():

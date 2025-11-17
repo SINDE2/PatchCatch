@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
 import os
+import re
 
 from flask import Flask, render_template
 from googletrans import Translator
@@ -16,6 +17,7 @@ app = Flask(__name__)
 DB_FILE = 'database.json'
 HISTORY_LIMIT = 12
 translator = Translator()
+KOREAN_PATTERN = re.compile(r'[\u3131-\u318E\uAC00-\uD7A3]')
 
 GAME_SECTIONS = [
     {
@@ -79,10 +81,9 @@ def save_db(data):
 def translate_text(text):
     if not text:
         return text
+    if KOREAN_PATTERN.search(text):
+        return text
     try:
-        detected = translator.detect(text)
-        if detected.lang == 'ko':
-            return text
         return translator.translate(text, dest='ko').text
     except Exception:
         return text

@@ -15,8 +15,9 @@
             리그 오브 레전드 북미·한국 서버 패치 로그를 자동으로 수집해 최신/이전 업데이트를 한 곳에서 확인할 수 있습니다.
         </p>
         <div class="nav-tabs d-flex justify-content-center gap-3 flex-wrap">
-            <a href="#na" class="tab-link active">북미 서버</a>
-            <a href="#kr" class="tab-link">한국 서버</a>
+            {% for nav in nav_links %}
+                <a href="#{{ nav.target }}" class="tab-link {% if loop.first %}active{% endif %}">{{ nav.label }}</a>
+            {% endfor %}
         </div>
         {% if lol_status %}
             <div class="status-banner mt-4 d-inline-flex align-items-center gap-2">
@@ -26,7 +27,7 @@
         {% endif %}
     </section>
 
-    <section class="category-card accent-lol card border-0 shadow-sm">
+    <section id="lol" class="category-card accent-lol card border-0 shadow-sm">
         <div class="card-body">
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
                 <div>
@@ -107,7 +108,7 @@
         </div>
     </section>
     {% for game in other_games %}
-        <section class="category-card {{ game.accent }} card border-0 shadow-sm mt-5">
+        <section id="{{ game.slug }}" class="category-card {{ game.accent }} card border-0 shadow-sm mt-5">
             <div class="card-body">
                 <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
                     <div>

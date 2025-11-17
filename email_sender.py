@@ -8,7 +8,6 @@ def send_email(game_name, title, link):
     app_password = "password"             # 2단계 인증 -> 앱 비밀번호 생성
     receiver_email = "returnaddress@gmail.com"      #returnaddress 받을이메일 작성
     # -------------------------------------------
-
     subject = f"[패치캐치!! 알림!!] {game_name} 새 업데이트 발견!"
     content = f"""
     [새로운 패치노트가 감지되었습니다]

@@ -2,16 +2,9 @@ from datetime import datetime
 import json
 import os
 import re
-<<<<<<< HEAD
 
 from flask import Flask, render_template
-from googletrans import Translator
-
-=======
-from flask import Flask, render_template, url_for
-# [변경] googletrans -> deep_translator
 from deep_translator import GoogleTranslator
->>>>>>> ffaeddf0e5895ab00ce93774d07410914b7ba98e
 from email_sender import send_email
 from scrapers import (
     get_lol_comparison,
@@ -22,18 +15,10 @@ from scrapers import (
 app = Flask(__name__)
 DB_FILE = 'database.json'
 HISTORY_LIMIT = 12
-<<<<<<< HEAD
-translator = Translator()
-=======
->>>>>>> ffaeddf0e5895ab00ce93774d07410914b7ba98e
 KOREAN_PATTERN = re.compile(r'[\u3131-\u318E\uAC00-\uD7A3]')
 PATCH_LINK_PATTERN = re.compile(r'patch-(\d+)-(\d+)', re.IGNORECASE)
 DECIMAL_PATTERN = re.compile(r'\d+\.\d+')
 NUMBER_PATTERN = re.compile(r'\d+')
-<<<<<<< HEAD
-
-=======
->>>>>>> ffaeddf0e5895ab00ce93774d07410914b7ba98e
 GAME_SECTIONS = [
     {
         "slug": "valorant",
@@ -74,14 +59,9 @@ NAV_LINKS = [
     {"label": "이터널 리턴", "target": "eternal-return"}
 ]
 
-<<<<<<< HEAD
-
-=======
->>>>>>> ffaeddf0e5895ab00ce93774d07410914b7ba98e
 def load_db():
     if not os.path.exists(DB_FILE): return {}
     with open(DB_FILE, 'r', encoding='utf-8') as f:
-<<<<<<< HEAD
         try:
             data = json.load(f)
         except json.JSONDecodeError:
@@ -90,38 +70,25 @@ def load_db():
         return {}
     return data
 
-=======
-        try: return json.load(f)
-        except json.JSONDecodeError: return {}
-    return {}
->>>>>>> ffaeddf0e5895ab00ce93774d07410914b7ba98e
 
 def save_db(data):
     with open(DB_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
-<<<<<<< HEAD
 
+
+
+TRANSLATOR = GoogleTranslator(source='auto', target='ko')
 
 def translate_text(text):
     if not text:
-        return text
+        return ""
     if KOREAN_PATTERN.search(text):
         return text
     try:
-        return translator.translate(text, dest='ko').text
+        return TRANSLATOR.translate(text)
     except Exception:
         return text
-=======
->>>>>>> ffaeddf0e5895ab00ce93774d07410914b7ba98e
 
-# [변경] 번역 함수 수정
-def translate_text(text):
-    if not text: return ""
-    if KOREAN_PATTERN.search(text): return text
-    try:
-        return GoogleTranslator(source='auto', target='ko').translate(text)
-    except:
-        return text
 
 def parse_version(text, link=None):
     if link:
@@ -152,11 +119,7 @@ def add_history_entry(storage, key, title, link):
     entry = {
         'title': title,
         'link': link or '#',
-<<<<<<< HEAD
         'captured_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-=======
-        'captured_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
->>>>>>> ffaeddf0e5895ab00ce93774d07410914b7ba98e
     }
     record['history'].insert(0, entry)
     record['history'] = record['history'][:HISTORY_LIMIT]
@@ -184,7 +147,6 @@ def collect_payloads():
         if p_na: payloads['lol_na'] = p_na
         if p_kr: payloads['lol_kr'] = p_kr
 
-<<<<<<< HEAD
     valorant = get_valorant_news()
     for region, info in valorant.items():
         entry = build_payload('Valorant', info.get('title'), info.get('link'))
@@ -196,17 +158,6 @@ def collect_payloads():
         entry = build_payload('Eternal Return', info.get('title'), info.get('link'))
         if entry:
             payloads[f'eternal_return_{region}'] = entry
-=======
-    val = get_valorant_news()
-    for r, i in val.items():
-        e = build_payload('Valorant', i.get('title'), i.get('link'))
-        if e: payloads[f'valorant_{r}'] = e
-
-    er = get_eternal_return_news()
-    for r, i in er.items():
-        e = build_payload('Eternal Return', i.get('title'), i.get('link'))
-        if e: payloads[f'eternal_return_{r}'] = e
->>>>>>> ffaeddf0e5895ab00ce93774d07410914b7ba98e
 
     return payloads, lol_status
 
@@ -218,12 +169,8 @@ def index():
 
     for slug, payload in payloads.items():
         title = payload.get('title')
-<<<<<<< HEAD
         if not title:
             continue
-=======
-        if not title: continue
->>>>>>> ffaeddf0e5895ab00ce93774d07410914b7ba98e
         record = ensure_channel_record(saved, slug)
         is_new = record.get('last_title') != title
         payload['is_new'] = is_new
@@ -231,7 +178,6 @@ def index():
             add_history_entry(saved, slug, title, payload.get('link'))
             link = payload.get('link')
             if link:
-<<<<<<< HEAD
                 send_email(payload.get('game', slug), title, link)
 
     save_db(saved)
@@ -258,13 +204,6 @@ def index():
             'servers': servers
         })
 
-=======
-                try: send_email(payload.get('game', slug), title, link)
-                except: pass
-    
-    save_db(saved)
-
->>>>>>> ffaeddf0e5895ab00ce93774d07410914b7ba98e
     def get_latest_entry(slug):
         if slug in payloads and payloads[slug].get('title'): return payloads[slug]
         h = saved.get(slug, {}).get('history') or []

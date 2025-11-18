@@ -59,92 +59,40 @@ def get_lol_comparison():
     except Exception:
         pass
         
-    na_ver = re.findall(r'(\d+\.\d+)', data['na_title'])
-    kr_ver = re.findall(r'(\d+\.\d+)', data['kr_title'])
+    na_ver = re.search(r'(\d+\.\d+)', data['na_title'])
+    kr_ver = re.search(r'(\d+\.\d+)', data['kr_title'])
     
     if na_ver and kr_ver:
-        if na_ver[-1] == kr_ver[-1]:
+        if na_ver.group(1) == kr_ver.group(1):
             data['status'] = "동기화 완료"
-            data['desc'] = f"한국 서버에 {kr_ver[-1]} 패치가 적용되었습니다."
+            data['desc'] = f"한국 서버에 {kr_ver.group(1)} 패치가 적용되었습니다."
         else:
             data['status'] = "북미 선행 공개"
-            data['desc'] = f"북미({na_ver[-1]})가 한국({kr_ver[-1]})보다 최신 버전입니다."
+            data['desc'] = f"북미({na_ver.group(1)})가 한국({kr_ver.group(1)})보다 최신 버전입니다."
 
     return data
 
 # ===========================================================================
 # 2. 발로란트 (Valorant)
 # ===========================================================================
-def _valorant_nodes_from_page_data():
-    data_url = "https://playvalorant.com/page-data/ko-kr/news/game-updates/page-data.json"
-    payload = requests.get(data_url, headers=HEADERS).json()
-    return (
-        payload.get("result", {})
-        .get("data", {})
-        .get("allContentstackNewsArticle", {})
-        .get("nodes", [])
-    )
-
-def _valorant_nodes_from_next_data():
-    html = requests.get("https://playvalorant.com/ko-kr/news/game-updates/", headers=HEADERS).text
-    soup = BeautifulSoup(html, 'html.parser')
-    script = soup.find('script', id="__NEXT_DATA__")
-    if not script or not script.string:
-        return []
-    data = json.loads(script.string)
-    return (
-        data.get("props", {})
-        .get("pageProps", {})
-        .get("pageData", {})
-        .get("data", {})
-        .get("allContentstackNewsArticle", {})
-        .get("nodes", [])
-    )
-
-_DUMMY_VALORANT_PAYLOAD = {
-    "kr": {
-        "game": "Valorant",
-        "title": "테스트 패치 99.99 패치 노트 (Dummy)",
-        "link": "https://playvalorant.com/ko-kr/news/game-updates/dummy-99-99-patch-notes"
-    }
-}
-
-
-def _use_dummy_valorant_news() -> bool:
-    flag = os.environ.get("VALORANT_DUMMY_PATCH", "")
-    return flag.strip().lower() in {"1", "true", "yes", "on"}
-
 
 def get_valorant_news():
-    if _use_dummy_valorant_news():
-        return {key: value.copy() for key, value in _DUMMY_VALORANT_PAYLOAD.items()}
+    url = "https://playvalorant.com/ko-kr/news/game-updates/"
+    r = requests.get(url, headers = HEADERS)
+    soup = BeautifulSoup(r.text, "html.parser")
+    
+    articles = soup.select('a[href*="/news/game-updates/valorant-patch-notes"]')
+    for art in articles:
+        title = art.select_one('[data-testid="card-title"]')
+        description = art.select_one('[data-testid="card-description"]')
+        title_str = title.text.strip() + ' ' + description.text.strip()
 
-    nodes = []
-    try:
-        nodes = _valorant_nodes_from_page_data()
-    except Exception:
-        nodes = []
-    if not nodes:
-        try:
-            nodes = _valorant_nodes_from_next_data()
-        except Exception:
-            nodes = []
-    for node in nodes:
-        url_field = node.get("url")
-        url_path = None
-        if isinstance(url_field, dict):
-            url_path = url_field.get("url")
-        elif isinstance(url_field, str):
-            url_path = url_field
-        if not url_path or "patch-notes" not in url_path:
-            continue
-        title = node.get("title")
-        link = "https://playvalorant.com" + url_path
-        if title and link:
-            return {
-                "kr": {"game": "발로란트", "title": title, "link": link}
+        if "패치 노트" in title_str:
+            link = "https://playvalorant.com" + art.get('href')
+            print(link)
+            return{
+                "kr": {"game" : "발로란트", "title" : title_str, "link" : link}
             }
-    return {} 
 
 # ===========================================================================
 # 3. 이터널 리턴 (Eternal Return)

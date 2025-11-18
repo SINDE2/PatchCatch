@@ -36,11 +36,13 @@ def get_lol_comparison():
         )
         articles = soup.select('a[href^="/en-us/news/game-updates/"]')
         for art in articles:
-            t = art.get_text(strip=True)
-            if "Patch" in t and "Notes" in t and "TFT" not in t:
-                data['na_title'] = t
+            title = art.select_one('[data-testid="card-title"]')
+            description = art.select_one('[data-testid="card-description"]')
+            title_en = title.text.strip() + ' ' + description.text.strip()
+            if "Patch" in title_en and "Notes" in title_en:
+                data['na_title'] = title_en
                 data['na_link'] = "https://www.leagueoflegends.com" + art['href']
-                break 
+                break
     except Exception:
         pass
         
@@ -51,9 +53,11 @@ def get_lol_comparison():
         )
         articles = soup.select('a[href^="/ko-kr/news/game-updates/"]')
         for art in articles:
-            t = art.get_text(strip=True)
-            if "패치" in t and "노트" in t and not any(x in t for x in ["TFT", "전략", "개발"]):
-                data['kr_title'] = t
+            title = art.select_one('[data-testid="card-title"]')
+            description = art.select_one('[data-testid="card-description"]')
+            title_str = title.text.strip() + ' ' + description.text.strip()
+            if "패치 노트" in title_str:
+                data['kr_title'] = title_str
                 data['kr_link'] = "https://www.leagueoflegends.com" + art['href']
                 break
     except Exception:
@@ -69,7 +73,6 @@ def get_lol_comparison():
         else:
             data['status'] = "북미 선행 공개"
             data['desc'] = f"북미({na_ver[-1]})가 한국({kr_ver[-1]})보다 최신 버전입니다."
-
     return data
 
 # ===========================================================================
@@ -89,7 +92,6 @@ def get_valorant_news():
 
         if "패치 노트" in title_str:
             link = "https://playvalorant.com" + art.get('href')
-            print(link)
             return{
                 "kr": {"game" : "발로란트", "title" : title_str, "link" : link}
             }

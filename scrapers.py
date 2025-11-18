@@ -59,16 +59,16 @@ def get_lol_comparison():
     except Exception:
         pass
         
-    na_ver = re.search(r'(\d+\.\d+)', data['na_title'])
-    kr_ver = re.search(r'(\d+\.\d+)', data['kr_title'])
+    na_ver = re.findall(r'(\d+\.\d+)', data['na_title'])
+    kr_ver = re.findall(r'(\d+\.\d+)', data['kr_title'])
     
     if na_ver and kr_ver:
-        if na_ver.group(1) == kr_ver.group(1):
+        if na_ver[-1] == kr_ver[-1]:
             data['status'] = "동기화 완료"
-            data['desc'] = f"한국 서버에 {kr_ver.group(1)} 패치가 적용되었습니다."
+            data['desc'] = f"한국 서버에 {kr_ver[-1]} 패치가 적용되었습니다."
         else:
             data['status'] = "북미 선행 공개"
-            data['desc'] = f"북미({na_ver.group(1)})가 한국({kr_ver.group(1)})보다 최신 버전입니다."
+            data['desc'] = f"북미({na_ver[-1]})가 한국({kr_ver[-1]})보다 최신 버전입니다."
 
     return data
 
